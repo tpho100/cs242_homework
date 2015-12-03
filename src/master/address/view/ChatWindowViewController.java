@@ -13,6 +13,7 @@ import java.util.ResourceBundle;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
+import master.address.model.SimpleEncryptor;
 
 public class ChatWindowViewController {
 
@@ -48,6 +49,7 @@ public class ChatWindowViewController {
      */
     private FileChooser fileChooser = new FileChooser();
     private File file;
+    private SimpleEncryptor encryptor = new SimpleEncryptor();
 
     /*
     Client ID parameters. Defaults to "UNKNOWN_USER" until
@@ -93,7 +95,7 @@ public class ChatWindowViewController {
                 String chatFromServer;
                 try{
                     if( ( chatFromServer = inToServer.readLine() ) != null ){
-                        chatLog.appendText(chatFromServer + "\n"); //This also handles newlines
+                        chatLog.appendText(encryptor.textDecrypt(chatFromServer, (byte) 24) + "\n"); //This also handles newlines
                     }
                 }catch(IOException e){
                     //System.err.println("Error reading from server. Connection probably closed.");
@@ -220,7 +222,7 @@ public class ChatWindowViewController {
         else{
             String message = String.valueOf(chatName + ": " + textArea.getText()); //Message is in the format username: message
             //Pass message to receiving end and let the server handle it
-            outToServer.println(message);
+            outToServer.println(encryptor.textEncrypt(message,(byte) 24));
         }
         textArea.clear();
     }

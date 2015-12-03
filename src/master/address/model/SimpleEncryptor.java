@@ -34,6 +34,20 @@ public class SimpleEncryptor extends Encryptor
 		return cipherText;
 	}
 
+	public String textEncrypt(String plainText, byte key){
+		char[] tempText = plainText.toCharArray();
+		String cipherText = "";
+
+		for(int i  = 0; i < plainText.length();i++)
+		{
+			tempText[i] += 4;
+			tempText[i] ^= key;
+			cipherText += tempText[i];
+		}
+		return cipherText;
+
+	}
+
 	@Override
 	public String textDecrypt(String cipherText, byte key) 
 	{
