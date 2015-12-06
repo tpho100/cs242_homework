@@ -22,11 +22,15 @@ public class FileEncryptor
 	{ //Accessor method to get encryption key
 		return key;
 	}
+
+	public void setKey(byte key){
+		this.key = key;
+	}
 	
 	/* Takes name of input text file as a string "inputFile" and spits out the contents
 	 * of each line into an ArrayList as strings
 	*/
-	private ArrayList<String> getFileContents(String inputFile) throws IOException
+	public ArrayList<String> getFileContents(String inputFile) throws IOException
 	{
 		ArrayList<String> lines = new ArrayList<String>(); //Container to hold file contents
 		
@@ -48,7 +52,7 @@ public class FileEncryptor
 	 * Takes file contents from ArrayList of strings
 	 * Dumps the contents into the output file specified by "outputFile"
 	 */
-	private void dumpIntoFile(String outputFile, ArrayList<String> fileContents) throws IOException
+	public void dumpIntoFile(String outputFile, ArrayList<String> fileContents) throws IOException
 	{
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 		
@@ -66,13 +70,13 @@ public class FileEncryptor
 	 * Dumps the encrypted version of every line
 	 *  into another ArrayList
 	 */
-	private ArrayList<String> encryptContent(ArrayList<String> fileContents)
+	public ArrayList<String> encryptContent(ArrayList<String> fileContents, byte somekey)
 	{
 		ArrayList<String> newFileContents = new ArrayList<String>(); //ArrayList container to hold encrypted lines
 		
 		for(Iterator<String> itr = fileContents.iterator();itr.hasNext();)
 		{ //Iterate through every item in the ArrayList
-			newFileContents.add(textEncrypt(itr.next(),key));
+			newFileContents.add(textEncrypt(itr.next(),somekey));
 		}
 		/*
 		 * Encryptor only generates the key when it has encrypted something 
@@ -84,13 +88,13 @@ public class FileEncryptor
 	 * Takes an ArrayList of strings, decrypts the content using
 	 * the specified key and returns the decrypted version of the ArrayList
 	 */
-	private ArrayList<String> decryptContent(ArrayList<String> encryptedContent, byte key)
+	public ArrayList<String> decryptContent(ArrayList<String> encryptedContent, byte somekey)
 	{
 		encryptor = new SimpleEncryptor();
 		ArrayList<String> decryptedContent = new ArrayList<String>(); //ArrayList container to hold decrypted lines
 		for(Iterator<String> itr = encryptedContent.iterator(); itr.hasNext();)
 		{ //Iterate through every item in the ArrayList
-			decryptedContent.add(encryptor.textDecrypt(itr.next(), key));
+			decryptedContent.add(encryptor.textDecrypt(itr.next(), somekey));
 		}
 		return decryptedContent;
 		
@@ -99,11 +103,11 @@ public class FileEncryptor
 	/*
 	 * Encrypts contents in inputFile and dumps encrypted content into outputFile
 	 */
-	public void encryptFile(String inputFile, String outputFile) throws IOException
+	public void encryptFile(String inputFile, String outputFile, byte somekey) throws IOException
 	{
-		ArrayList<String> fileContent = new ArrayList<String>();
+		ArrayList<String> fileContent;
 		fileContent = getFileContents(inputFile);
-		fileContent = encryptContent(fileContent);
+		fileContent = encryptContent(fileContent,somekey);
 		dumpIntoFile(outputFile, fileContent);
 	}
 	
@@ -111,11 +115,11 @@ public class FileEncryptor
 	 * Decrypts contents in inputFile and dumps decrypted content into outputFile
 	 */
 	
-	public void decryptFile(String inputFile, String outputFile, byte key) throws IOException
+	public void decryptFile(String inputFile, String outputFile, byte somekey) throws IOException
 	{
 		ArrayList<String> fileContent = new ArrayList<String>();
 		fileContent = getFileContents(inputFile);
-		fileContent = decryptContent(fileContent, key);
+		fileContent = decryptContent(fileContent, somekey);
 		dumpIntoFile(outputFile, fileContent);
 	}
 
@@ -173,8 +177,6 @@ public class FileEncryptor
 		}
 		return wr;
 	}
-
-	
 	
 	public String textEncrypt(String plainText, byte key)
 	{

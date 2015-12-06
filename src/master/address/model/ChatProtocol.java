@@ -5,6 +5,8 @@ package master.address.model;
  */
 public class ChatProtocol {
 
+    //If user passes text process it properly
+    //If user passes a file process it properly
     public String processInput(String input){
         return input;
     }

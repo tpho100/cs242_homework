@@ -6,13 +6,14 @@ import javafx.fxml.FXML;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.Optional;
-import java.util.ResourceBundle;
 
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import master.address.model.FileEncryptor;
 import master.address.model.SimpleEncryptor;
 
 public class ChatWindowViewController {
@@ -22,67 +23,42 @@ public class ChatWindowViewController {
      */
     @FXML
     private MenuItem connectButton;
-
     @FXML
     private MenuItem closeButton;
-
     @FXML
-    private ResourceBundle resources;
-
+    private MenuItem encryptButton;
     @FXML
-    private URL location;
-
+    private MenuItem decryptButton;
     @FXML
     private Button sendFile;
-
     @FXML
     private TextArea chatLog;
-
     @FXML
     private Button send;
-
     @FXML
     private TextArea textArea;
-
-    /*
-    UI Components for handling file I/O
-     */
-    private FileChooser fileChooser = new FileChooser();
-    private File file;
-    private SimpleEncryptor encryptor = new SimpleEncryptor();
 
     /*
     Client ID parameters. Defaults to "UNKNOWN_USER" until
     user picks a new client name.
      */
     private String chatName = "UNKNOWN_USER";
-
     /*
     Server connection parameters.
     Two sockets. One for chat messages and one
     for file transfer.
      */
     final String hostName = "localhost";
-    final int chatPort = 13699;
+    final int serverPort = 13699;
+    final byte encryptionKey = 24;
 
     Socket chatSocket;
     Socket fileSocket;
-
     /*
     Streams for reading/writing data
      */
-    PrintWriter outToServer;
-    BufferedReader inToServer;
-
-    DataInputStream dataInToServer;
-    DataOutputStream dataOutToServer;
-
-    /*
-    Placeholders for incoming text/files
-     */
-
-    byte[] fileFromServer;
-    byte[] fileFromUser;
+    PrintWriter writeMessageToServer;
+    BufferedReader readMessageFromServer;
 
     Thread threadForMessages = new Thread(new Runnable() {
         /*
@@ -91,39 +67,22 @@ public class ChatWindowViewController {
          */
         @Override
         public void run() {
-            while(chatSocket != null){
-                String chatFromServer;
-                try{
-                    if( ( chatFromServer = inToServer.readLine() ) != null ){
-                        chatLog.appendText(encryptor.textDecrypt(chatFromServer, (byte) 24) + "\n"); //This also handles newlines
+            while (chatSocket != null) {
+                String messageFromServer;
+                try {
+                    if ((messageFromServer = readMessageFromServer.readLine()) != null) {
+                        SimpleEncryptor encryptor = new SimpleEncryptor();
+                        chatLog.appendText(encryptor.textDecrypt(messageFromServer, encryptionKey) + "\n"); //This also handles newlines
                     }
-                }catch(IOException e){
+                } catch (IOException e) {
                     //System.err.println("Error reading from server. Connection probably closed.");
                 }
             }
-            //threadForMessages.interrupt(); //Kill the thread if the while loop somehow stops.
         }
     });
 
-    Thread threadForFiles = new Thread(new Runnable() {
-        /*
-        This thread handles file transfers.
-         */
-        @Override
-        public void run() {
-            while(fileSocket != null){
-                try{
-                    Thread.sleep(100);
-                }catch(Exception e){
 
-                }
-            }
-            //threadForFiles.interrupt(); //Kill thread if while loop stops.
-        }
-    });
-
-    @FXML
-    public void initialize(){
+    @FXML public void initialize(){
         /*
         Get username before launching the application.
          */
@@ -138,6 +97,7 @@ public class ChatWindowViewController {
         }
         else
         {
+            System.out.println("Failed to get a username.");
             Platform.exit();
         }
     }
@@ -147,51 +107,56 @@ public class ChatWindowViewController {
         Closes off all streams.
          */
         try{
-            outToServer.close();
-            inToServer.close();
-
-            dataOutToServer.close();
-            dataInToServer.close();
-
+            writeMessageToServer.close();
+            readMessageFromServer.close();
             chatSocket.close();
             chatSocket = null;
-            fileSocket.close();
-            fileSocket = null;
-
             threadForMessages.interrupt();
-            threadForFiles.interrupt();
 
         }catch(Exception e){
         }
     }
 
-    @FXML
-    private void onCloseButtonClicked(ActionEvent e) {
+    @FXML private void encryptButtonClicked(ActionEvent e){
+        Stage stage = (Stage) send.getScene().getWindow();
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(stage);
+        FileEncryptor encryptor = new FileEncryptor();
+        try{
+            encryptor.encryptFile(file.getName(),"encrypted_output1234.txt",encryptionKey);
+        }catch(Exception ex){
+        }
+    }
+    @FXML private void decryptButtonClicked(ActionEvent e){
+        Stage stage = (Stage) send.getScene().getWindow();
+        FileChooser fileChooser = new FileChooser();
+
+        File file = fileChooser.showOpenDialog(stage);
+        FileEncryptor encryptor = new FileEncryptor();
+        try{
+            encryptor.decryptFile(file.getName(),"decrypted_output1234.txt",encryptionKey);
+        }catch(Exception ex){
+        }
+    }
+    @FXML private void onCloseButtonClicked(ActionEvent e) {
         closeEverything();
         Platform.exit();
     }
+    @FXML private void onConnectButtonClicked(ActionEvent e){
 
-    @FXML
-    private void onConnectButtonClicked(ActionEvent e){
-
-        if( chatSocket == null || fileSocket == null){
+        if( chatSocket == null){
             // Don't try to connect again if already connected
             try{
-                chatSocket = new Socket(hostName, chatPort);
-                fileSocket = new Socket(hostName, chatPort);
-                //System.out.println("Creating sockets using: hostname: " + hostName + " port: " + chatPort + " / " + filePort);
+                chatSocket = new Socket(hostName, serverPort);
+                //System.out.println("Creating sockets using: hostname: " + hostName + " port: " + serverPort + " / " + filePort);
 
-                outToServer = new PrintWriter(chatSocket.getOutputStream(),true);
-                inToServer = new BufferedReader( new InputStreamReader(chatSocket.getInputStream()) );
-
-                dataInToServer = new DataInputStream( fileSocket.getInputStream() );
-                dataOutToServer = new DataOutputStream( fileSocket.getOutputStream() );
+                writeMessageToServer = new PrintWriter(chatSocket.getOutputStream(),true);
+                readMessageFromServer = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
 
                 /*
                 Start queuing for server messages once connections are made.
                  */
                 threadForMessages.start();
-                threadForFiles.start();
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Server Connection");
@@ -200,6 +165,11 @@ public class ChatWindowViewController {
                 alert.showAndWait();
 
             }catch(IOException ioe){
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Server Connection");
+                alert.setHeaderText("CONNECTION INFO");
+                alert.setContentText("Connection Failed!");
+                alert.showAndWait();
                 System.err.println(ioe.getMessage());
             }
         }else
@@ -211,8 +181,7 @@ public class ChatWindowViewController {
         }
     }
 
-    @FXML
-    private void onSendButtonClicked(ActionEvent e){
+    @FXML private void onSendButtonClicked(ActionEvent e){
         if(chatSocket == null){
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Warning!");
@@ -222,19 +191,45 @@ public class ChatWindowViewController {
         else{
             String message = String.valueOf(chatName + ": " + textArea.getText()); //Message is in the format username: message
             //Pass message to receiving end and let the server handle it
-            outToServer.println(encryptor.textEncrypt(message,(byte) 24));
+            SimpleEncryptor encryptor = new SimpleEncryptor();
+            writeMessageToServer.println(encryptor.textEncrypt(message,encryptionKey));
         }
         textArea.clear();
     }
+    @FXML private void onSendFileButtonClicked(ActionEvent e){
+        Stage stage = (Stage) sendFile.getScene().getWindow();
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(stage);
+        FileEncryptor encryptor = new FileEncryptor();
+        try{
+            ArrayList<String> fileContents = encryptor.getFileContents(file.getName());
+            ArrayList<String> encryptedContents = encryptor.encryptContent(fileContents,encryptionKey);
 
-    @FXML
-    private void onSendFileButtonClicked(ActionEvent e){
-        file = fileChooser.showOpenDialog(send.getScene().getWindow());
+            Thread t1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for(String line : encryptedContents){
+                        writeMessageToServer.println(line);
+                    }
+                }
+            });
 
+            t1.start();
+            sendFile.setDisable(true);
+            textArea.setDisable(true);
+            chatLog.appendText("SENDING FILE TO SERVER.\n");
+            while(t1.isAlive()){
+
+            }
+            sendFile.setDisable(false);
+            textArea.setDisable(false);
+
+        }catch(Exception wtf){
+
+        }
     }
 
-    @FXML
-    private void onEnterKey(KeyEvent k) {
+    @FXML private void onEnterKey(KeyEvent k) {
         k.consume();
         if (k.getCode().toString().equals("ENTER")) {
             onSendButtonClicked(new ActionEvent());

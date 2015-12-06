@@ -1,13 +1,13 @@
 package master.address.model;
 import com.sun.corba.se.spi.activation.Server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by Thanh-Phong on 11/20/2015.
@@ -19,8 +19,8 @@ public class ChatServer{
         final int portNumber = 13699; //Server port number
 
         List<ServerThread> clientList = new ArrayList<>(); //Track how many clients based on the # of threads
-
-        List<String> messageQueue = new ArrayList<>();
+        List<String> messageQueue = new ArrayList<>(); //Thread safe list
+        List< ArrayList<String> > fileQueue = new ArrayList<>(); //Thread safe file queue
 
         ServerSocket serverSocket = new ServerSocket(portNumber);
 
@@ -43,7 +43,6 @@ public class ChatServer{
                     for(ServerThread client : clientList){
                         if(client.getMessage() != null){
                             messageQueue.add(client.getMessage());
-                            client.nullOutMessage();
                         }
                     }
 
@@ -71,7 +70,6 @@ public class ChatServer{
                         messageQueue.remove(0);
                         for(ServerThread client : clientList){
                             client.setOutputMessage(msg);
-                            client.nullOutMessage();
                         }
                     }
 
@@ -84,16 +82,16 @@ public class ChatServer{
         messageQueueHandlerThread.start();
 
         try{
+
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("Accepted New Client: " + socket.getPort());
+                    System.out.println("Accepted New Client: " + socket.getPort());
+                    ServerThread st = new ServerThread(socket);
+                    Thread t1 = new Thread(st);
+                    t1.start();
+                    clientList.add(st);
+                }
 
-                ServerThread st = new ServerThread(socket);
-                Thread t1 = new Thread(st);
-                t1.start();
-
-                clientList.add(st);
-            }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + portNumber);
             System.exit(-1);

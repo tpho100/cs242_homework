@@ -95,7 +95,7 @@ public class MainEncryptor
 							/*
 							 * All 4 arguments are present. Andd the 3rd argument is -o. Try running the program.
 							 */
-							fileEncryptor.encryptFile(args[1], args[3]);
+							fileEncryptor.encryptFile(args[1], args[3],(byte) 24);
 							System.out.println("Key: " + fileEncryptor.getKey());
 							
 						}
@@ -262,7 +262,7 @@ public class MainEncryptor
 								String outputFile;
 								outputFile = userReader.readLine();
 								
-								fileEncryptor.encryptFile(inputFile, outputFile);
+								fileEncryptor.encryptFile(inputFile, outputFile,(byte) 24);
 								System.out.println("Your key: " + fileEncryptor.getKey() + "\n");
 								System.out.println("Finished Encrypting.");
 								System.out.println("Enter anything to continue...");

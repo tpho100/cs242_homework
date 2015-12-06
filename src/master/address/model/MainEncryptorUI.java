@@ -157,7 +157,7 @@ public class MainEncryptorUI extends Application {
 			FileEncryptor fileEncryptor = new FileEncryptor();
 			
 			try {
-				fileEncryptor.encryptFile(in, out);
+				fileEncryptor.encryptFile(in, out, (byte) 24);
 				int key = (int) fileEncryptor.getKey();
 				keyStatus.setText(String.valueOf(key));
 			} catch (Exception e1) {

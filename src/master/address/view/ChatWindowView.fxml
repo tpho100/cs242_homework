@@ -16,9 +16,11 @@
                     <MenuItem fx:id="closeButton" mnemonicParsing="false" onAction="#onCloseButtonClicked" text="Close" />
                   </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="Connections">
+                <Menu mnemonicParsing="false" text="Connection &amp; Encryption Tools">
                   <items>
                     <MenuItem fx:id="connectButton" mnemonicParsing="false" onAction="#onConnectButtonClicked" text="Connect" />
+                        <MenuItem fx:id="encryptButton" mnemonicParsing="false" onAction="#encryptButtonClicked" text="Encrypt File" />
+                        <MenuItem fx:id="decryptButton" mnemonicParsing="false" onAction="#decryptButtonClicked" text="Decrypt File" />
                   </items>
                 </Menu>
               </menus>
