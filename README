@@ -1,0 +1,13 @@
+Clarkson University Fall 2015
+CS 242 - Advanced Programming Concepts in Java
+
+#### Homework Submissions ####
+Homework 1 - Simple Encryptor
+Encrypts lines of text using the XOR operation.
+
+Homework 2 - GUI Encryptor
+Extends homework 1 by adding a JavaFX user interface and text file support.
+
+Homework 3 - Chat Program
+Extends homework 2 by creating a socket based chat program (TCP & JavaFX). The messages are encrypted using the XOR operator
+and a static key. File transfer is currently not supported.
